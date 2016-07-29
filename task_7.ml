@@ -45,9 +45,13 @@ let deriv f v =
     delta 1.0
 
 (* (6) (発展課題) OCaml のリストモジュールには、List.sort 関数が用意されており、
-これは、任意の順序で、ソート (整列) をお こなうものである。
+これは、任意の順序で、ソート (整列) をおこなうものである。
 この関数について調べて、「整数リストを小さい順から並べる」「文字列リストを辞書式順に並べる」など、
 いろいろなソートが実現できることを示しなさい。 *)
+(* 整数リストを小さい順から並べる *)
+let _ = List.sort compare [1; 5; 2; 3; 4];;
+(* 文字列リストを辞書式順に並べる *)
+let _ = List.sort compare ["aloha"; "mahalo"; "komo"];;
 
 (* テスト *)
 let test1 = min [] = max_int;;
@@ -62,3 +66,16 @@ let test7 =  my_fold_right (fun x y -> (float x) +. y) [1; 2; 3] 0.0 = 6.0;;
 
 let test8 = deriv (fun x -> x *. x +. x +. 1.0) 3.5;;
 let test9 = deriv (fun x -> x *. x +. x +. 1.0) 11.5;;
+
+(*
+# compare 1 4;;
+- : int = -1
+# List.sort (fun x y -> if x > y then 1 else -1) [2;3;1;5];;
+- : int list = [1; 2; 3; 5]
+# List.sort (fun x y -> if x > y then 1 else -2) [2;3;1;5];;
+- : int list = [1; 2; 3; 5]
+# List.sort (fun x y -> if x > y then 10 else -2) [2;3;1;5];;
+- : int list = [1; 2; 3; 5]
+# List.sort (fun x y -> if x > y then -1 else -2) [2;3;1;5];;
+- : int list = [2; 3; 1; 5]
+*)
