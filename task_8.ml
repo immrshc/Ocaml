@@ -47,8 +47,12 @@ let foo2 n1 n2 =
     foo2_aux n1 n2 0.0
 
 (* テスト *)
-let test1 = power_2 2 3;;
-let test2 = rev_append [1; 2; 3] [4; 5; 6];;
+let test1 = power_1 2 3;;
+let test2 = power_2 2 3;;
+
+let test3 = rev_append [1; 2; 3] [4; 5; 6];;
+let test4 = rev_append [7; 8; 9] [10; 11; 12];;
+
 let test3 = bench(fun () -> power_1 2 15);;
 let test4 = bench(fun () -> power_2 2 15);;
 let test5 = bench(fun () -> foo1 5 8);;
