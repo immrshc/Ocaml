@@ -57,12 +57,34 @@ let eval (str: string): int =
                      else failwith "Remaining number error in run"
 
 (* テスト *)
-let test1 = eval "123+*4+" = 9;;
+let test1_1 = eval "123+*4+" = 9;;
 (* スタックが途中で不足してしまうのでエラー
 "Empty stack error in pop" *)
-(* let test2 = eval "123+*4++";; *)
+(* let test1_2 = eval "123+*4++";; *)
 (* スタックに要素が 2つ以上残ってしまうのでエラー
 "Remaining number error in run" *)
-(* let test3 = eval "123+*4";; *)
+(* let test1_3 = eval "123+*4";; *)
 
 (* 2. 論理式の処理 *)
+type formula =
+ | Atom of string
+ | Not of formula
+ | And of formula * formula
+ | Or of formula * formula
+
+(* 2.1 論理式に含まれる原子命題の名前の種類のリストを返す *)
+let get_atom (fml: formula): string list =
+  let rec set_atom (fml: formula) (lst: string list): string list =
+    match fml with
+    | Atom(s) -> if List.mem s lst then lst else s::lst
+    | Not(f1) -> set_atom f1 lst
+    | And(f1, f2) -> set_atom f1 (set_atom f2 lst)
+    | Or(f1, f2) -> set_atom f1 (set_atom f2 lst)
+  in set_atom fml []
+
+
+
+(* テスト *)
+let test2_1 = get_atom (And(Not(Atom("p")), Or(Atom("q"),Atom("p")))) = ["q"; "p"];;
+
+(* 必修課題は、3.1の代わりに2.3でもいい *)
