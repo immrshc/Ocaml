@@ -97,6 +97,40 @@ let rec eval_2 (fml: formula) (asn: (string * bool) list): bool =
 (* テスト *)
 let test2_2_1 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p",true);("q",false)] = false;;
 let test2_2_2 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p",false);("q",true)] = true;;
-(* let test2_2_3 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p", true)];;(* エラーまたはfalse *) *)
+(* let test2_2_3 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p", true)];;(* エラー *) *)
 (* let test2_2_4 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p", false)];;(* エラー *) *)
 let test2_2_5 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p", false); ("q", true); ("r", true)] = true;;
+
+
+(* 原子命題のリストatomsをもらって、その原子命題リストに対する「すべての割当てを並べたリスト」を返す *)
+let make_aenv (atoms : string list) =
+ let rec walk atoms aenv =
+  match atoms with
+  | [] -> [aenv]
+  | h::t -> (walk t ((h, true)::aenv)) @ (walk t ((h, false)::aenv))
+ in walk atoms []
+
+(* 原子命題のリストatomsをもらって、そのリストの要素の文字列を結合させる *)
+let make_index (atoms : string list) =
+  let rec make_index_aux (atoms : string list) (str: string): string =
+    match atoms with
+    | [] -> str ^ ":"
+    | h::t -> make_index_aux t (str ^ h ^ " ")
+  in make_index_aux atoms ""
+
+(* 2.3 上記の関数eval_2を利用して、与えられた論理式の真理値表を作成する *)
+let formula_table (fml: formula) =
+  let str_list: string list = get_atom fml in
+  let formula_row (s: (string * bool) list) = print_string((make_index str_list) ^ string_of_bool(eval_2 fml s) ^ "\n") in
+begin
+  print_string "p q target test\n";
+  List.iter formula_row (make_aenv str_list)
+end
+
+(* テスト *)
+let _ = make_aenv ["p"; "q"];;
+let _ = make_index ["p"; "q"];;
+let _ = make_aenv (get_atom (And(Not(Atom("p")), Or(Atom("q"), Atom("p")))));;
+(* let _ = List.iter (fun (s: ((string * bool) list)) -> (print_string(string_of_bool(List.assoc "p" s) ^ "\n") ))
+  (make_aenv (get_atom (And(Not(Atom("p")), Or(Atom("q"), Atom("p"))))));; *)
+let _ = formula_table (And(Not(Atom("p")), Or(Atom("q"), Atom("p"))));;
