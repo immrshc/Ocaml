@@ -65,6 +65,7 @@ let test1_1 = eval_1 "123+*4+" = 9;;
 "Remaining number error in run" *)
 (* let test1_3 = eval_1 "123+*4";; *)
 
+
 (* 2.1 論理式の処理 *)
 type formula =
  | Atom of string
@@ -110,27 +111,47 @@ let make_aenv (atoms : string list) =
   | h::t -> (walk t ((h, true)::aenv)) @ (walk t ((h, false)::aenv))
  in walk atoms []
 
-(* 原子命題のリストatomsをもらって、そのリストの要素の文字列を結合させる *)
-let make_index (atoms : string list) =
-  let rec make_index_aux (atoms : string list) (str: string): string =
+(* 原子命題のリストatomsをもらって、そのリストの要素の文字列を列とする *)
+let make_column (atoms : string list) =
+  let rec make_column_aux (atoms : string list) (str: string): string =
     match atoms with
-    | [] -> str ^ ":"
-    | h::t -> make_index_aux t (str ^ h ^ " ")
-  in make_index_aux atoms ""
+    | [] -> str ^ ": target\n"
+    | h::t -> make_column_aux t (str ^ h ^ " ")
+  in make_column_aux atoms ""
+
+(* タプルのキーの文字列に対応した値の真偽値の組み合わせを返す *)
+let make_index (asn: (string * bool) list) (atoms: string list): string =
+  let rec make_index_aux (asn: (string * bool) list) (atoms: string list) (str: string): string =
+    match atoms with
+    | [] -> str ^ ": "
+    | h::t -> make_index_aux asn t (str ^ string_of_bool(List.assoc h asn) ^ " ")
+  in make_index_aux asn atoms ""
 
 (* 2.3 上記の関数eval_2を利用して、与えられた論理式の真理値表を作成する *)
 let formula_table (fml: formula) =
-  let str_list: string list = get_atom fml in
-  let formula_row (s: (string * bool) list) = print_string((make_index str_list) ^ string_of_bool(eval_2 fml s) ^ "\n") in
+  let atoms: string list = get_atom fml in
+  let formula_row (asn: (string * bool) list) =
+    (* 割り当てのキーに対応した値の真偽値の組み合わせの文字列を返す：make_index *)
+    (* その真偽値の組み合わせで解いた論理式の真偽値の文字列を返す：eval_2 を使う *)
+    print_string((make_index asn atoms) ^ string_of_bool(eval_2 fml asn) ^ "\n") in
 begin
-  print_string "p q target test\n";
-  List.iter formula_row (make_aenv str_list)
+  print_string(make_column atoms);
+  List.iter formula_row (make_aenv atoms)
 end
 
 (* テスト *)
 let _ = make_aenv ["p"; "q"];;
-let _ = make_index ["p"; "q"];;
+let _ = make_index [("p",true);("q",false)] ["p"; "q"];;
+let _ = make_index [("p",true);("q",false)] ["q"; "p"];;
 let _ = make_aenv (get_atom (And(Not(Atom("p")), Or(Atom("q"), Atom("p")))));;
-(* let _ = List.iter (fun (s: ((string * bool) list)) -> (print_string(string_of_bool(List.assoc "p" s) ^ "\n") ))
-  (make_aenv (get_atom (And(Not(Atom("p")), Or(Atom("q"), Atom("p"))))));; *)
 let _ = formula_table (And(Not(Atom("p")), Or(Atom("q"), Atom("p"))));;
+
+(* 演習課題2-4 (発展課題) 論理式And(Not(Atom("p")),Or(Atom("q"),Atom("p"))) を(~ p) & (q \/ p) などのように出力する *)
+
+(* 演習課題3-1 (選択必修課題; これと2-3 のどちらかが必修) 上記の2 つの変換のうちNot を内側にいれる変換を実装せよ。関数
+名はto_nnf とする。(NNF というのはNegation-Normal Form、つまり否定に関する標準形という意味である)。 *)
+
+(* 演習課題3-2 (発展) 上記の2 つの変換のうち後半(否定に関する処理がおわった論理式に対して、それをCNF に変換) を実装せ
+よ。関数名はto_cnf とする。 *)
+
+(* 上記の多倍長整数に対する、加算をおこなう関数add を定義せよ。 *)
