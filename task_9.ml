@@ -1,6 +1,6 @@
 (* 必須課題の三つは必ず提出する *)
 
-(* 1 逆ポーランド記法 *)
+(* 1.1 逆ポーランド記法 *)
 type stack = int list
 
 let push (n: int) (s: stack): stack =
@@ -49,23 +49,28 @@ let rec run (stk: stack) (str: string) (i: int): stack =
   else stk
 
 (* 処理の最初にスタックに初期値を与え、処理の最後にスタックから答えを取り出す *)
-let eval (str: string): int =
+let eval_1 (str: string): int =
   let stk = run [] str 0 in
   match pop stk with
   (* _が空になるかどうかの確認を追加する *)
   | (top, newstk) -> if is_empty newstk then top
                      else failwith "Remaining number error in run"
 
+(* 演習課題1-2 (発展) 対象となる言語を拡張して、run/eval も対応させなさい。拡張としては、引き算やべき乗演算をいれる、ス
+タック操作関数としてdup(スタックのトップの要素をコピーしてスタックに積む)、swap (スタックのトップと2 番目の要素をい
+れかえる) が考えられる。なお、ここではすべての命令を1 文字としているので、dup やswap はd やs という1 文字にするとよい。 *)
+
 (* テスト *)
-let test1_1 = eval "123+*4+" = 9;;
+let test1_1 = eval_1 "123+*4+" = 9;;
 (* スタックが途中で不足してしまうのでエラー
 "Empty stack error in pop" *)
-(* let test1_2 = eval "123+*4++";; *)
+(* let test1_2 = eval_1 "123+*4++";; *)
 (* スタックに要素が 2つ以上残ってしまうのでエラー
 "Remaining number error in run" *)
-(* let test1_3 = eval "123+*4";; *)
+(* let test1_3 = eval_1 "123+*4";; *)
 
-(* 2. 論理式の処理 *)
+
+(* 2.1 論理式の処理 *)
 type formula =
  | Atom of string
  | Not of formula
@@ -82,9 +87,132 @@ let get_atom (fml: formula): string list =
     | Or(f1, f2) -> set_atom f1 (set_atom f2 lst)
   in set_atom fml []
 
-
-
 (* テスト *)
 let test2_1 = get_atom (And(Not(Atom("p")), Or(Atom("q"),Atom("p")))) = ["q"; "p"];;
 
-(* 必修課題は、3.1の代わりに2.3でもいい *)
+
+(* 2.2 論理式の真偽値 *)
+let rec eval_2 (fml: formula) (asn: (string * bool) list): bool =
+  match fml with
+  | Atom(s) -> List.assoc s asn
+  | Not(f1) -> not (eval_2 f1 asn)
+  | And(f1, f2) -> (eval_2 f1 asn) && (eval_2 f2 asn)
+  | Or(f1, f2) -> (eval_2 f1 asn) || (eval_2 f2 asn)
+
+(* テスト *)
+let test2_2_1 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p",true);("q",false)] = false;;
+let test2_2_2 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p",false);("q",true)] = true;;
+(* let test2_2_3 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p", true)];;(* エラー *) *)
+(* let test2_2_4 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p", false)];;(* エラー *) *)
+let test2_2_5 = eval_2 (And(Not(Atom("p")),Or(Atom("q"),Atom("p")))) [("p", false); ("q", true); ("r", true)] = true;;
+
+
+(* 原子命題のリストatomsをもらって、その原子命題リストに対する「すべての割当てを並べたリスト」を返す *)
+let make_aenv (atoms : string list) =
+ let rec walk atoms aenv =
+  match atoms with
+  | [] -> [aenv]
+  | h::t -> (walk t ((h, true)::aenv)) @ (walk t ((h, false)::aenv))
+ in walk atoms []
+
+(* 原子命題のリストatomsをもらって、そのリストの要素の文字列を列とする *)
+let make_column (atoms : string list) =
+  let rec make_column_aux (atoms : string list) (str: string): string =
+    match atoms with
+    | [] -> str ^ ": target\n"
+    | h::t -> make_column_aux t (str ^ h ^ " ")
+  in make_column_aux atoms ""
+
+(* タプルのキーの文字列に対応した値の真偽値の組み合わせを返す *)
+let make_index (asn: (string * bool) list) (atoms: string list): string =
+  let rec make_index_aux (asn: (string * bool) list) (atoms: string list) (str: string): string =
+    match atoms with
+    | [] -> str ^ ": "
+    | h::t -> make_index_aux asn t (str ^ string_of_bool(List.assoc h asn) ^ " ")
+  in make_index_aux asn atoms ""
+
+(* 2.3 上記の関数eval_2を利用して、与えられた論理式の真理値表を作成する *)
+let formula_table (fml: formula) =
+  let atoms: string list = get_atom fml in
+  let formula_row (asn: (string * bool) list) =
+    (* 割り当てのキーに対応した値の真偽値の組み合わせの文字列を返す：make_index *)
+    (* その真偽値の組み合わせで解いた論理式の真偽値の文字列を返す：eval_2 を使う *)
+    print_string((make_index asn atoms) ^ string_of_bool(eval_2 fml asn) ^ "\n") in
+begin
+  print_string(make_column atoms);
+  List.iter formula_row (make_aenv atoms)
+end
+
+(* テスト *)
+let _ = make_aenv ["p"; "q"];;
+let _ = make_index [("p",true);("q",false)] ["p"; "q"];;
+let _ = make_index [("p",true);("q",false)] ["q"; "p"];;
+let _ = make_aenv (get_atom (And(Not(Atom("p")), Or(Atom("q"), Atom("p")))));;
+let _ = formula_table (And(Not(Atom("p")), Or(Atom("q"), Atom("p"))));;
+
+
+(* 演習課題2-4 (発展課題) 論理式And(Not(Atom("p")),Or(Atom("q"),Atom("p"))) を(~ p) & (q \/ p) などのように出力する *)
+let print_formula (fml: formula) =
+  let rec string_of_formula (fml: formula): string =
+    match fml with
+    | Atom(s) -> s
+    | Not(f1) -> "(~ " ^ (string_of_formula f1) ^ ")"
+    | And(f1, f2) -> "(" ^ (string_of_formula f1) ^ " & " ^ (string_of_formula f2) ^ ")"
+    | Or(f1, f2) -> "(" ^ (string_of_formula f1) ^ " \\/ " ^ (string_of_formula f2) ^ ")"
+  in print_string(string_of_formula fml)
+
+(* テスト *)
+let _ = print_formula (And(Not(Atom("p")),Or(Atom("q"),Atom("p"))))
+
+
+(* 否定の記号を、一番内側に移動する。このためには、Not(Not(f))->f, Not(And(f1,f2))->Or(Not(f1),Not(f2))、
+Not(Or(f1,f2))->And(Not(f1),Not(f2)) といった変形を繰返し適用し、これ以上変形できなくなったら終了すれば
+よい。 *)
+(* And をOr の外に出す。このためには、Or(And(f1,f2),f3)-> And(Or(f1,f3),Or(f2,f3))、
+Or(f3,And(f1,f2))-> And(Or(f3,f1),Or(f3,f2)) といった変形を繰返し適用し、これ以上変形できなくなったら終了
+すればよい。 *)
+
+(* 演習課題3-1 (選択必修課題; これと2-3 のどちらかが必修) 上記の2つの変換のうちNot を内側にいれる変換を実装せよ。関数
+名はto_nnf とする。(NNF というのはNegation-Normal Form、つまり否定に関する標準形という意味である)。 *)
+let to_nnf (fml: formula): formula =
+  let rec to_nnf_aux (pre: string) (fml: formula): formula =
+    if pre = "Not" then
+      match fml with
+      | Atom(s) -> Not(Atom(s))
+      | Not(f1) -> to_nnf_aux "" f1
+      | And(f1, f2) -> Or((to_nnf_aux "Not" f1), (to_nnf_aux "Not" f2))
+      | Or(f1, f2) -> And((to_nnf_aux "Not" f1), (to_nnf_aux "Not" f2))
+    else match fml with
+      | Atom(s) -> Atom(s)
+      | Not(f1) -> to_nnf_aux "Not" f1
+      | And(f1, f2) -> And((to_nnf_aux "" f1), (to_nnf_aux "" f2))
+      | Or(f1, f2) -> Or((to_nnf_aux "" f1), (to_nnf_aux "" f2))
+  in to_nnf_aux "" fml
+
+(* テスト *)
+let _ = to_nnf (Not(Not(Atom "p")));;
+let _ = to_nnf (Not(And(Atom "p", Atom "q")));;
+let _ = to_nnf (Not(And(Not(Atom "p"), Atom "q")));;
+let _ = to_nnf (Not(And(Not(Atom "p"), Or(Atom "q", Atom "p")))) = Or(Atom "p", And(Not (Atom "q"), Not(Atom "p")));;
+
+(* 演習課題3-2 (発展) 上記の2 つの変換のうち後半(否定に関する処理がおわった論理式に対して、それをCNF に変換) を実装せ
+よ。関数名はto_cnf とする。 *)
+let to_cnf (fml: formula): formula =
+  let rec to_cnf_aux (pre: string) (fml: formula): formula =
+    if pre = "Or" then
+      match fml with
+      | Or(And(f1, f2), f3) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
+      | Or(f3, And(f1, f2)) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
+      | Or(f3, f4) -> Or((to_cnf_aux "Or" f3), (to_cnf_aux "Or" f4))
+    else match fml with
+      | Atom(s) -> Atom(s)
+      | Not(f1) -> Not(f1)
+      | And(f1, f2) -> And((to_cnf_aux "" f1), (to_cnf_aux "" f2))
+      | Or(f3, f4) -> to_cnf_aux "Or" fml
+  in to_cnf_aux "" fml
+
+(* テスト *)
+let _ = to_cnf (Atom "p");;
+let _ = to_cnf (Or(Not(Atom "p"), Not(Atom "q")));;
+(* let _ = to_cnf (Or(Atom "p", Not (Atom "q")));;
+let _ = to_cnf Or(Atom "p", And(Not (Atom "q"), Not(Atom "p")));; *)
