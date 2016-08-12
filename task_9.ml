@@ -56,10 +56,6 @@ let eval_1 (str: string): int =
   | (top, newstk) -> if is_empty newstk then top
                      else failwith "Remaining number error in run"
 
-(* 演習課題1-2 (発展) 対象となる言語を拡張して、run/eval も対応させなさい。拡張としては、引き算やべき乗演算をいれる、ス
-タック操作関数としてdup(スタックのトップの要素をコピーしてスタックに積む)、swap (スタックのトップと2 番目の要素をい
-れかえる) が考えられる。なお、ここではすべての命令を1 文字としているので、dup やswap はd やs という1 文字にするとよい。 *)
-
 (* テスト *)
 let test1_1 = eval_1 "123+*4+" = 9;;
 (* スタックが途中で不足してしまうのでエラー
@@ -195,24 +191,25 @@ let _ = to_nnf (Not(And(Atom "p", Atom "q")));;
 let _ = to_nnf (Not(And(Not(Atom "p"), Atom "q")));;
 let _ = to_nnf (Not(And(Not(Atom "p"), Or(Atom "q", Atom "p")))) = Or(Atom "p", And(Not (Atom "q"), Not(Atom "p")));;
 
-(* 演習課題3-2 (発展) 上記の2 つの変換のうち後半(否定に関する処理がおわった論理式に対して、それをCNF に変換) を実装せ
-よ。関数名はto_cnf とする。 *)
+(* 演習課題3-2 (発展) 上記の2 つの変換のうち後半(否定に関する処理がおわった論理式に対して、それをCNF に変換) を実装せよ。関数名は to_cnf とする。 *)
 let to_cnf (fml: formula): formula =
   let rec to_cnf_aux (pre: string) (fml: formula): formula =
-    if pre = "Or" then
-      match fml with
-      | Or(And(f1, f2), f3) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
-      | Or(f3, And(f1, f2)) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
-      | Or(f3, f4) -> Or((to_cnf_aux "Or" f3), (to_cnf_aux "Or" f4))
+    if pre = "Or" then match fml with
+    | Or(And(f1, f2), f3) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
+    | Or(f3, And(f1, f2)) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
+    (* | Or(Or(f1, f2), f3) -> to_cnf_aux "Or" (Or((to_cnf_aux "" (Or(f1, f2))), (to_cnf_aux "" f3)))
+    | Or(f3, Or(f1, f2)) -> to_cnf_aux "Or" (Or((to_cnf_aux "" (Or(f1, f2))), (to_cnf_aux "" f3))) *)
+    | Or(Or(f1, f2), f3) -> Or((to_cnf_aux "" (Or(f1, f2))), (to_cnf_aux "" f3))
+    | Or(_, _) -> fml
     else match fml with
-      | Atom(s) -> Atom(s)
-      | Not(f1) -> Not(f1)
-      | And(f1, f2) -> And((to_cnf_aux "" f1), (to_cnf_aux "" f2))
-      | Or(f3, f4) -> to_cnf_aux "Or" fml
+    | Atom(s) -> fml
+    | Not(f1) -> fml (* to_nnfが既に実行されているから *)
+    | Or(f1, f2) -> to_cnf_aux "Or" fml
+    | And(f1, f2) -> And((to_cnf_aux "" f1), (to_cnf_aux "" f2))
   in to_cnf_aux "" fml
 
 (* テスト *)
 let _ = to_cnf (Atom "p");;
-let _ = to_cnf (Or(Not(Atom "p"), Not(Atom "q")));;
-(* let _ = to_cnf (Or(Atom "p", Not (Atom "q")));;
-let _ = to_cnf Or(Atom "p", And(Not (Atom "q"), Not(Atom "p")));; *)
+let _ = to_cnf (Or(Atom "p", Atom "q"));;
+let _ = to_cnf (Or(And((Atom "p"), (Atom "q")), Atom "r"));;
+let _ = to_cnf (Or(Or(Atom "p", Atom "q"), Atom "r"));;
