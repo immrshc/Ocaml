@@ -164,11 +164,55 @@ let print_formula (fml: formula) =
 (* テスト *)
 let _ = print_formula (And(Not(Atom("p")),Or(Atom("q"),Atom("p"))))
 
+
+(* 否定の記号を、一番内側に移動する。このためには、Not(Not(f))->f, Not(And(f1,f2))->Or(Not(f1),Not(f2))、
+Not(Or(f1,f2))->And(Not(f1),Not(f2)) といった変形を繰返し適用し、これ以上変形できなくなったら終了すれば
+よい。 *)
+(* And をOr の外に出す。このためには、Or(And(f1,f2),f3)-> And(Or(f1,f3),Or(f2,f3))、
+Or(f3,And(f1,f2))-> And(Or(f3,f1),Or(f3,f2)) といった変形を繰返し適用し、これ以上変形できなくなったら終了
+すればよい。 *)
+
 (* 演習課題3-1 (選択必修課題; これと2-3 のどちらかが必修) 上記の2つの変換のうちNot を内側にいれる変換を実装せよ。関数
 名はto_nnf とする。(NNF というのはNegation-Normal Form、つまり否定に関する標準形という意味である)。 *)
+let to_nnf (fml: formula): formula =
+  let rec to_nnf_aux (pre: string) (fml: formula): formula =
+    if pre = "Not" then
+      match fml with
+      | Atom(s) -> Not(Atom(s))
+      | Not(f1) -> to_nnf_aux "" f1
+      | And(f1, f2) -> Or((to_nnf_aux "Not" f1), (to_nnf_aux "Not" f2))
+      | Or(f1, f2) -> And((to_nnf_aux "Not" f1), (to_nnf_aux "Not" f2))
+    else match fml with
+      | Atom(s) -> Atom(s)
+      | Not(f1) -> to_nnf_aux "Not" f1
+      | And(f1, f2) -> And((to_nnf_aux "" f1), (to_nnf_aux "" f2))
+      | Or(f1, f2) -> Or((to_nnf_aux "" f1), (to_nnf_aux "" f2))
+  in to_nnf_aux "" fml
 
+(* テスト *)
+let _ = to_nnf (Not(Not(Atom "p")));;
+let _ = to_nnf (Not(And(Atom "p", Atom "q")));;
+let _ = to_nnf (Not(And(Not(Atom "p"), Atom "q")));;
+let _ = to_nnf (Not(And(Not(Atom "p"), Or(Atom "q", Atom "p")))) = Or(Atom "p", And(Not (Atom "q"), Not(Atom "p")));;
 
 (* 演習課題3-2 (発展) 上記の2 つの変換のうち後半(否定に関する処理がおわった論理式に対して、それをCNF に変換) を実装せ
 よ。関数名はto_cnf とする。 *)
+let to_cnf (fml: formula): formula =
+  let rec to_cnf_aux (pre: string) (fml: formula): formula =
+    if pre = "Or" then
+      match fml with
+      | Or(And(f1, f2), f3) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
+      | Or(f3, And(f1, f2)) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
+      | Or(f3, f4) -> Or((to_cnf_aux "Or" f3), (to_cnf_aux "Or" f4))
+    else match fml with
+      | Atom(s) -> Atom(s)
+      | Not(f1) -> Not(f1)
+      | And(f1, f2) -> And((to_cnf_aux "" f1), (to_cnf_aux "" f2))
+      | Or(f3, f4) -> to_cnf_aux "Or" fml
+  in to_cnf_aux "" fml
 
-(* 上記の多倍長整数に対する、加算をおこなう関数add を定義せよ。 *)
+(* テスト *)
+let _ = to_cnf (Atom "p");;
+let _ = to_cnf (Or(Not(Atom "p"), Not(Atom "q")));;
+(* let _ = to_cnf (Or(Atom "p", Not (Atom "q")));;
+let _ = to_cnf Or(Atom "p", And(Not (Atom "q"), Not(Atom "p")));; *)
