@@ -140,11 +140,11 @@ begin
 end
 
 (* テスト *)
-let _ = make_aenv ["p"; "q"];;
-let _ = make_index [("p",true);("q",false)] ["p"; "q"];;
-let _ = make_index [("p",true);("q",false)] ["q"; "p"];;
-let _ = make_aenv (get_atom (And(Not(Atom("p")), Or(Atom("q"), Atom("p")))));;
-let _ = formula_table (And(Not(Atom("p")), Or(Atom("q"), Atom("p"))));;
+let test2_3_1 = make_aenv ["p"; "q"];;
+let test2_3_2 = make_index [("p",true);("q",false)] ["p"; "q"];;
+let test2_3_3 = make_index [("p",true);("q",false)] ["q"; "p"];;
+let test2_3_4 = make_aenv (get_atom (And(Not(Atom("p")), Or(Atom("q"), Atom("p")))));;
+let test2_3_5 = formula_table (And(Not(Atom("p")), Or(Atom("q"), Atom("p"))));;
 
 
 (* 演習課題2-4 (発展課題) 論理式And(Not(Atom("p")),Or(Atom("q"),Atom("p"))) を(~ p) & (q \/ p) などのように出力する *)
@@ -158,7 +158,7 @@ let print_formula (fml: formula) =
   in print_string(string_of_formula fml)
 
 (* テスト *)
-let _ = print_formula (And(Not(Atom("p")),Or(Atom("q"),Atom("p"))))
+let test2_4 = print_formula (And(Not(Atom("p")),Or(Atom("q"),Atom("p"))))
 
 
 (* 否定の記号を、一番内側に移動する。このためには、Not(Not(f))->f, Not(And(f1,f2))->Or(Not(f1),Not(f2))、
@@ -186,10 +186,10 @@ let to_nnf (fml: formula): formula =
   in to_nnf_aux "" fml
 
 (* テスト *)
-let _ = to_nnf (Not(Not(Atom "p")));;
-let _ = to_nnf (Not(And(Atom "p", Atom "q")));;
-let _ = to_nnf (Not(And(Not(Atom "p"), Atom "q")));;
-let _ = to_nnf (Not(And(Not(Atom "p"), Or(Atom "q", Atom "p")))) = Or(Atom "p", And(Not (Atom "q"), Not(Atom "p")));;
+let test3_1_1 = to_nnf (Not(Not(Atom "p")));;
+let test3_1_2 = to_nnf (Not(And(Atom "p", Atom "q")));;
+let test3_1_3 = to_nnf (Not(And(Not(Atom "p"), Atom "q")));;
+let test3_1_4 = to_nnf (Not(And(Not(Atom "p"), Or(Atom "q", Atom "p")))) = Or(Atom "p", And(Not (Atom "q"), Not(Atom "p")));;
 
 (* 演習課題3-2 (発展) 上記の2 つの変換のうち後半(否定に関する処理がおわった論理式に対して、それをCNF に変換) を実装せよ。関数名は to_cnf とする。 *)
 let to_cnf (fml: formula): formula =
@@ -197,8 +197,6 @@ let to_cnf (fml: formula): formula =
     if pre = "Or" then match fml with
     | Or(And(f1, f2), f3) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
     | Or(f3, And(f1, f2)) -> And((to_cnf_aux "" (Or(f1, f3))), (to_cnf_aux "" (Or(f2, f3))))
-    (* | Or(Or(f1, f2), f3) -> to_cnf_aux "Or" (Or((to_cnf_aux "" (Or(f1, f2))), (to_cnf_aux "" f3)))
-    | Or(f3, Or(f1, f2)) -> to_cnf_aux "Or" (Or((to_cnf_aux "" (Or(f1, f2))), (to_cnf_aux "" f3))) *)
     | Or(Or(f1, f2), f3) -> Or((to_cnf_aux "" (Or(f1, f2))), (to_cnf_aux "" f3))
     | Or(_, _) -> fml
     else match fml with
@@ -209,7 +207,7 @@ let to_cnf (fml: formula): formula =
   in to_cnf_aux "" fml
 
 (* テスト *)
-let _ = to_cnf (Atom "p");;
-let _ = to_cnf (Or(Atom "p", Atom "q"));;
-let _ = to_cnf (Or(And((Atom "p"), (Atom "q")), Atom "r"));;
-let _ = to_cnf (Or(Or(Atom "p", Atom "q"), Atom "r"));;
+let test3_2_1 = to_cnf (Atom "p");;
+let test3_2_2 = to_cnf (Or(Atom "p", Atom "q"));;
+let test3_2_3 = to_cnf (Or(And((Atom "p"), (Atom "q")), Atom "r"));;
+let test3_2_4 = to_cnf (Or(Or(Atom "p", Atom "q"), Atom "r"));;
