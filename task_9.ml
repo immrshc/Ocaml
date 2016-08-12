@@ -56,6 +56,10 @@ let eval_1 (str: string): int =
   | (top, newstk) -> if is_empty newstk then top
                      else failwith "Remaining number error in run"
 
+(* 演習課題1-2 (発展) 対象となる言語を拡張して、run/eval も対応させなさい。拡張としては、引き算やべき乗演算をいれる、ス
+タック操作関数としてdup(スタックのトップの要素をコピーしてスタックに積む)、swap (スタックのトップと2 番目の要素をい
+れかえる) が考えられる。なお、ここではすべての命令を1 文字としているので、dup やswap はd やs という1 文字にするとよい。 *)
+
 (* テスト *)
 let test1_1 = eval_1 "123+*4+" = 9;;
 (* スタックが途中で不足してしまうのでエラー
@@ -146,10 +150,23 @@ let _ = make_index [("p",true);("q",false)] ["q"; "p"];;
 let _ = make_aenv (get_atom (And(Not(Atom("p")), Or(Atom("q"), Atom("p")))));;
 let _ = formula_table (And(Not(Atom("p")), Or(Atom("q"), Atom("p"))));;
 
-(* 演習課題2-4 (発展課題) 論理式And(Not(Atom("p")),Or(Atom("q"),Atom("p"))) を(~ p) & (q \/ p) などのように出力する *)
 
-(* 演習課題3-1 (選択必修課題; これと2-3 のどちらかが必修) 上記の2 つの変換のうちNot を内側にいれる変換を実装せよ。関数
+(* 演習課題2-4 (発展課題) 論理式And(Not(Atom("p")),Or(Atom("q"),Atom("p"))) を(~ p) & (q \/ p) などのように出力する *)
+let print_formula (fml: formula) =
+  let rec string_of_formula (fml: formula): string =
+    match fml with
+    | Atom(s) -> s
+    | Not(f1) -> "(~ " ^ (string_of_formula f1) ^ ")"
+    | And(f1, f2) -> "(" ^ (string_of_formula f1) ^ " & " ^ (string_of_formula f2) ^ ")"
+    | Or(f1, f2) -> "(" ^ (string_of_formula f1) ^ " \\/ " ^ (string_of_formula f2) ^ ")"
+  in print_string(string_of_formula fml)
+
+(* テスト *)
+let _ = print_formula (And(Not(Atom("p")),Or(Atom("q"),Atom("p"))))
+
+(* 演習課題3-1 (選択必修課題; これと2-3 のどちらかが必修) 上記の2つの変換のうちNot を内側にいれる変換を実装せよ。関数
 名はto_nnf とする。(NNF というのはNegation-Normal Form、つまり否定に関する標準形という意味である)。 *)
+
 
 (* 演習課題3-2 (発展) 上記の2 つの変換のうち後半(否定に関する処理がおわった論理式に対して、それをCNF に変換) を実装せ
 よ。関数名はto_cnf とする。 *)
